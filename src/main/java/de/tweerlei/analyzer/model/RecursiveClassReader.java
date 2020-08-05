@@ -143,7 +143,7 @@ public class RecursiveClassReader
 		final ClassProcessor proc = new ClassProcessor();
 		cr.accept(proc, 0);
 		
-		classes.put(proc.getClassName(), new ClassDescriptor(proc.getClassName(), proc.getDependencies(), proc.getInterfaces()));
+		classes.put(proc.getClassName(), new ClassDescriptor(proc.getClassName(), proc.getDependencies(), proc.getInterfaces(), null));
 		
 		return (this);
 		}

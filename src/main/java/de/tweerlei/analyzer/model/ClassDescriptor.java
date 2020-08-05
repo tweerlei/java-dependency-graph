@@ -25,6 +25,7 @@ import java.util.Set;
 public final class ClassDescriptor
 	{
 	private final String className;
+	private final String groupName;
 	private final Set<String> deps;
 	private final Set<String> ifs;
 	
@@ -33,12 +34,14 @@ public final class ClassDescriptor
 	 * @param className Class name
 	 * @param deps Class names references by this class
 	 * @param ifs Superclass and interfaces
+	 * @param groupName Group name
 	 */
-	public ClassDescriptor(String className, Set<String> deps, Set<String> ifs)
+	public ClassDescriptor(String className, Set<String> deps, Set<String> ifs, String groupName)
 		{
 		this.className = className;
 		this.deps = deps;
 		this.ifs = ifs;
+		this.groupName = groupName;
 		
 		cleanup();
 		}
@@ -62,6 +65,15 @@ public final class ClassDescriptor
 		return className;
 		}
 	
+	/**
+	 * Get the group name
+	 * @return Group name
+	 */
+	public String getGroupName()
+		{
+		return groupName;
+		}
+
 	/**
 	 * Get the class names references by this class
 	 * @return Class names

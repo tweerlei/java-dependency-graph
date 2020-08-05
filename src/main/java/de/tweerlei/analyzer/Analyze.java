@@ -20,12 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import de.tweerlei.analyzer.model.ClassDescriptor;
-import de.tweerlei.analyzer.model.ClassDescriptorFilter;
-import de.tweerlei.analyzer.model.IdentityFilter;
-import de.tweerlei.analyzer.model.PackageNameAggregator;
-import de.tweerlei.analyzer.model.RecursiveClassReader;
-import de.tweerlei.analyzer.model.SimpleNameAggregator;
+import de.tweerlei.analyzer.model.*;
 import de.tweerlei.analyzer.output.DotWriter;
 
 /**
@@ -52,10 +47,11 @@ public class Analyze
 	private void usage()
 		{
 		System.err.println(
-				"usage: " + getClass().getName() + " [-s] [-p] [-v] {file.class | file.jar | dir} ...\n\n"
-				+" -p  Calculate package dependencies\n"
-				+" -s  Print only simple class names\n"
-				+" -v  Print processed file names\n\n"
+				"usage: " + getClass().getName() + " [-s] [-pN] [-gN] [-v] {file.class | file.jar | dir} ...\n\n"
+				+" -pN  Calculate package dependencies using N levels\n"
+				+" -s   Print only simple class names\n"
+				+" -gN  Group entries by first N package levels\n"
+				+" -v   Print processed file names\n\n"
 				);
 		}
 	
@@ -68,6 +64,7 @@ public class Analyze
 	private int run(String[] args) throws Exception
 		{
 		boolean verbose = false;
+		int group = 0;
 		
 		ClassDescriptorFilter filter = new IdentityFilter();
 		
@@ -79,8 +76,10 @@ public class Analyze
 				{
 				if (s.equals("-s"))
 					filter = new SimpleNameAggregator();
-				else if (s.equals("-p"))
-					filter = new PackageNameAggregator();
+				else if (s.startsWith("-p"))
+					filter = new PackageNameAggregator(Integer.parseInt(s.substring(2)));
+				else if (s.startsWith("-g"))
+					group = Integer.parseInt(s.substring(2));
 				else
 					usage();
 				}
@@ -92,7 +91,9 @@ public class Analyze
 		for (File f : filesToRead)
 			r.readClasses(f);
 		
-		final Map<String, ClassDescriptor> classes = filter.filter(r.getClassDescriptors());
+		Map<String, ClassDescriptor> classes = filter.filter(r.getClassDescriptors());
+		if (group > 0)
+			classes = new PackageNameGrouper(group).filter(classes);
 		
 		new DotWriter().write(classes, System.out);
 		

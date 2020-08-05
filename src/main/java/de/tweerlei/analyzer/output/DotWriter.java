@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import de.tweerlei.analyzer.model.ClassDescriptor;
@@ -62,17 +65,45 @@ public class DotWriter
 		writer.write("digraph G {\n");
 		writer.write("\tnode [shape=plaintext];\n");
 		
+		for (Map.Entry<String, List<ClassDescriptor>> ent : groupClasses(classes).entrySet())
+			{
+			if (ent.getKey() != null)
+				{
+				writer.write("\tsubgraph cluster");
+				writer.write(ent.getKey().replace('/', '_'));
+				writer.write(" {\n");
+				writer.write("\tlabel=\"");
+				writer.write(formatClassName(ent.getKey()));
+				writer.write("\"\n");
+				writer.write("\tfontname=\"");
+				writer.write(FONT_NAME);
+				writer.write("\"\n");
+				}
+			
+			for (ClassDescriptor cd : ent.getValue())
+				{
+				final String name = formatClassName(cd.getClassName());
+
+				writer.write("\t\"");
+				writer.write(name);
+				writer.write("\" [label=<<table port=\"entity\" border=\"0\" cellspacing=\"0\" cellborder=\"1\">\n");
+				writer.write("\t\t<tr><td><font face=\"");
+				writer.write(FONT_NAME);
+				writer.write(" Bold\" point-size=\"12\">");
+				writer.write(name);
+				writer.write("</font></td></tr>\n");
+				writer.write("\t\t</table>>];\n");
+				}
+			
+			if (ent.getKey() != null)
+				{
+				writer.write("\t}\n");
+				}
+			}
+		
 		for (ClassDescriptor cd : classes.values())
 			{
 			final String name = formatClassName(cd.getClassName());
-			
-			writer.write("\t\"");
-			writer.write(name);
-			writer.write("\" [label=<<table port=\"entity\" border=\"0\" cellspacing=\"0\" cellborder=\"1\">\n");
-			writer.write("\t\t<tr><td><font face=\""); writer.write(FONT_NAME); writer.write(" Bold\" point-size=\"12\">");
-			writer.write(name);
-			writer.write("</font></td></tr>\n");
-			writer.write("\t\t</table>>];\n");
 			
 			for (String dep : cd.getInterfaces())
 				{
@@ -82,10 +113,10 @@ public class DotWriter
 					final String dname = formatClassName(d.getClassName());
 					
 					writer.write("\t\"");
-					writer.write(dname);
-					writer.write("\":entity -> \"");
 					writer.write(name);
-					writer.write("\":entity [dir=forward];\n");
+					writer.write("\":entity -> \"");
+					writer.write(dname);
+					writer.write("\":entity [dir=forward,style=dashed];\n");
 					}
 				}
 			
@@ -106,6 +137,24 @@ public class DotWriter
 			}
 		
 		writer.write("}\n");
+		}
+	
+	private Map<String, List<ClassDescriptor>> groupClasses(Map<String, ClassDescriptor> classes)
+		{
+		final Map<String, List<ClassDescriptor>> ret = new HashMap<String, List<ClassDescriptor>>();
+
+		for (ClassDescriptor cd : classes.values())
+			{
+			List<ClassDescriptor> l = ret.get(cd.getGroupName());
+			if (l == null)
+				{
+				l = new ArrayList<ClassDescriptor>();
+				ret.put(cd.getGroupName(), l);
+				}
+			l.add(cd);
+			}
+
+		return (ret);
 		}
 	
 	private String formatClassName(String n)

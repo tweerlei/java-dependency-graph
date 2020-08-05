@@ -26,28 +26,50 @@ import java.util.Map;
  */
 public class PackageNameAggregator implements ClassDescriptorFilter
 	{
+	private final int level;
+	
+	/**
+	 * Constructor
+	 * @param level Number of subpackages
+	 */
+	public PackageNameAggregator(int level)
+		{
+		this.level = level;
+		}
+	
 	public Map<String, ClassDescriptor> filter(Map<String, ClassDescriptor> classes)
 		{
 		final Map<String, ClassDescriptor> ret = new HashMap<String, ClassDescriptor>();
 		
 		for (ClassDescriptor cd : classes.values())
 			{
-			final String packageName = getPackageName(cd.getClassName());
+			final String packageName = getGroupedPackageName(cd.getClassName());
 			ClassDescriptor pd = ret.get(packageName);
 			if (pd == null)
 				{
-				pd = new ClassDescriptor(packageName, new HashSet<String>(), new HashSet<String>());
+				pd = new ClassDescriptor(packageName, new HashSet<String>(), new HashSet<String>(), null);
 				ret.put(packageName, pd);
 				}
 			for (String s : cd.getDependencies())
-				pd.getDependencies().add(getPackageName(s));
+				pd.getDependencies().add(getGroupedPackageName(s));
 			for (String s : cd.getInterfaces())
-				pd.getInterfaces().add(getPackageName(s));
+				pd.getInterfaces().add(getGroupedPackageName(s));
 			
 			pd.cleanup();
 			}
 		
 		return (ret);
+		}
+	
+	private String getGroupedPackageName(String className)
+		{
+		final String pn = getPackageName(className);
+		
+		final int i = nthIndexOf(pn,'/', level);
+		if (i < 0)
+			return (pn);
+		else
+			return (pn.substring(0, i));
 		}
 	
 	private final String getPackageName(String className)
@@ -57,5 +79,22 @@ public class PackageNameAggregator implements ClassDescriptorFilter
 			return (className);
 		else
 			return (className.substring(0, i));
+		}
+	
+	private final int nthIndexOf(String s, char pattern, int n)
+		{
+		int i = -1;
+		for (int x = 0; x < n; x++)
+			{
+			i = s.indexOf(pattern, i + 1);
+			if (i < 0)
+				{
+				if (x == n - 1)
+					return (s.length());
+				else
+					return (i);
+				}
+			}
+		return (i);
 		}
 	}

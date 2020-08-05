@@ -16,46 +16,62 @@
 package de.tweerlei.analyzer.model;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 /**
- * Aggregate classes to their simple names
+ * Group by package name
  * 
  * @author Robert Wruck
  */
-public class SimpleNameAggregator implements ClassDescriptorFilter
+public class PackageNameGrouper implements ClassDescriptorFilter
 	{
+	private final int level;
+
+	/**
+	 * Constructor
+	 * @param level Number of subpackages
+	 */
+	public PackageNameGrouper(int level)
+		{
+		this.level = level;
+		}
+
 	public Map<String, ClassDescriptor> filter(Map<String, ClassDescriptor> classes)
 		{
 		final Map<String, ClassDescriptor> ret = new HashMap<String, ClassDescriptor>();
 		
 		for (ClassDescriptor cd : classes.values())
 			{
-			final String packageName = getSimpleName(cd.getClassName());
-			ClassDescriptor pd = ret.get(packageName);
-			if (pd == null)
-				{
-				pd = new ClassDescriptor(packageName, new HashSet<String>(), new HashSet<String>(), null);
-				ret.put(packageName, pd);
-				}
-			for (String s : cd.getDependencies())
-				pd.getDependencies().add(getSimpleName(s));
-			for (String s : cd.getInterfaces())
-				pd.getInterfaces().add(getSimpleName(s));
-			
-			pd.cleanup();
+			final String groupName = getGroupName(cd.getClassName());
+			ret.put(cd.getClassName(), new ClassDescriptor(cd.getClassName(), cd.getDependencies(), cd.getInterfaces(), groupName));
 			}
-		
+
 		return (ret);
 		}
 	
-	private final String getSimpleName(String className)
+	private final String getGroupName(String className)
 		{
-		final int i = className.lastIndexOf('/');
+		final int i = nthIndexOf(className,'/', level);
 		if (i < 0)
-			return (className);
+			return (null);
 		else
-			return (className.substring(i + 1));
+			return (className.substring(0, i));
+		}
+
+	private final int nthIndexOf(String s, char pattern, int n)
+		{
+		int i = -1;
+		for (int x = 0; x < n; x++)
+			{
+			i = s.indexOf(pattern, i + 1);
+			if (i < 0)
+				{
+				if (x == n - 1)
+					return (s.length());
+				else
+					return (i);
+				}
+			}
+		return (i);
 		}
 	}
